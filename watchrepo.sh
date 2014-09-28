@@ -47,16 +47,31 @@ detect_new_repo() {
     done
 }
 
+while getopts "r:t:s" flag; do
+case $flag in
+    \?) OPT_ERROR=1; break;;
+    r) repodir="$OPTARG";;
+    t) targetlist="$OPTARG";;
+    s) stop=1;;
+esac
+done
 
-test -z $1 && echo "[usage] $0 [/path/to/repodir|stop]" && exit 1
-if [ x$1 = x"stop" ]; then
+shift $(( $OPTIND - 1))
+
+if [ $OPT_ERROR ] || ( [ $repodir ] && [ $stop ] ) || ( [ -z $repodir ] && [ -z $stop ] ); then
+    echo >&2 "[usage] $0 {[-t /path/to/targetlist] -r /path/to/repodir| -s}"
+    exit 1
+fi
+
+test -z $stop && stop=0
+
+if [ $stop -eq 1 ]; then
     pkill inotifywait
     exit 0
 fi
-repodir=$1
 
 test ! -d $repodir && install -d $repodir
-targetlist=${repodir}/target.list
+test -z $targetlist && targetlist=${repodir}/target.list
 
 rm -f $pidpath
 touch $targetlist
