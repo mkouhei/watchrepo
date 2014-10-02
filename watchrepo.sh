@@ -59,7 +59,9 @@ done
 shift $(( $OPTIND - 1))
 
 if [ $OPT_ERROR ] || ( [ $repodir ] && [ $stop ] ) || ( [ -z $repodir ] && [ -z $stop ] ); then
-    echo >&2 "[usage] $0 {[-t /path/to/targetlist] -r /path/to/repodir| -s}"
+    echo >&2 "[usage] $0 [-t /path/to/targetlist] -r /path/to/repodir|-s|-S"
+    echo >&2 "\tstart:\t[-t /path/to/targetlist] -r /path/to/repodir"
+    echo >&2 "\tstop:\t-s"
     exit 1
 fi
 
