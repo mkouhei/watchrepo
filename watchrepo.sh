@@ -47,35 +47,70 @@ detect_new_repo() {
     done
 }
 
-while getopts "r:t:s" flag; do
+check_status() {
+    ps_cnt=$(ps auxw | grep inotifywait | grep -v grep | wc -l)
+}
+
+while getopts "t:r:sS" flag; do
 case $flag in
     \?) OPT_ERROR=1; break;;
-    r) repodir="$OPTARG";;
     t) targetlist="$OPTARG";;
-    s) stop=1;;
+    r) repodir="$OPTARG";break;;
+    s) stop=1; break;;
+    S) status=1; break;;
 esac
 done
 
 shift $(( $OPTIND - 1))
 
-if [ $OPT_ERROR ] || ( [ $repodir ] && [ $stop ] ) || ( [ -z $repodir ] && [ -z $stop ] ); then
+if [ $OPT_ERROR ] || [ -z $repodir ] && [ -z $stop ] && [ -z $status ]; then
     echo >&2 "[usage] $0 [-t /path/to/targetlist] -r /path/to/repodir|-s|-S"
     echo >&2 "\tstart:\t[-t /path/to/targetlist] -r /path/to/repodir"
     echo >&2 "\tstop:\t-s"
+    echo >&2 "\tstatus:\t-S"
     exit 1
 fi
 
 test -z $stop && stop=0
+test -z $status && status=0
 
-if [ $stop -eq 1 ]; then
-    pkill inotifywait
+
+# check status
+if [ $status -eq 1 ]; then
+    check_status
+    case $ps_cnt in
+        0) msg="watchrepo: stopped.";;
+        1) msg="watchrepo: started only detecting newrepo.";;
+        2) msg="watchrepo: started detecting newrepo and rpm files.";;
+        *) msg="watchrepo: error occured. you must stop watchrepo.";;
+    esac
+    echo $msg
     exit 0
 fi
 
-test ! -d $repodir && install -d $repodir
-test -z $targetlist && targetlist=${repodir}/target.list
+# stopping
+if [ $stop -eq 1 ]; then
+    check_status
+    if [ $ps_cnt -gt 0 ]; then
+        pkill inotifywait
+    else
+        echo "watchrepo has already stopped."
+        exit 1
+    fi
+    exit 0
+fi
 
-touch $targetlist
-
-watchrepo &
-detect_new_repo &
+# starting
+if [ $repodir ]; then
+    test ! -d $repodir && install -d $repodir
+    test -z $targetlist && targetlist=${repodir}/target.list
+    check_status
+    if [ $ps_cnt -eq 0 ]; then
+        touch $targetlist
+        watchrepo &
+        detect_new_repo &
+    else
+        echo "watchrepo is already started."
+        exit 1
+    fi
+fi
