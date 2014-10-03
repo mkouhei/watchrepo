@@ -95,7 +95,6 @@ if [ $stop -eq 1 ]; then
         pkill inotifywait
     else
         echo "watchrepo has already stopped."
-        exit 1
     fi
     exit 0
 fi
@@ -111,6 +110,6 @@ if [ $repodir ]; then
         detect_new_repo &
     else
         echo "watchrepo is already started."
-        exit 1
+        exit 0
     fi
 fi
