@@ -75,7 +75,6 @@ fi
 test ! -d $repodir && install -d $repodir
 test -z $targetlist && targetlist=${repodir}/target.list
 
-rm -f $pidpath
 touch $targetlist
 
 watchrepo &
